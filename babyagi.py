@@ -421,28 +421,28 @@ def task_creation_agent(
         objective: str, result: Dict, task_description: str, task_list: List[str]
 ):
     prompt = f"""
-You are to use the result from an execution agent to create new tasks with the following objective: {objective}.
-The last completed task has the result: \n{result["data"]}
-This result was based on this task description: {task_description}.\n"""
+您将使用执行代理的结果来创建具有以下目标的新任务： {objective}.
+最后完成的任务的结果是：\n{result["data"]}
+此结果基于以下任务的描述：{task_description}.\n"""
 
     if task_list:
-        prompt += f"These are incomplete tasks: {', '.join(task_list)}\n"
-    prompt += "Based on the result, return a list of tasks to be completed in order to meet the objective. "
+        prompt += f"这些是未完成的任务：{', '.join(task_list)}\n"
+    prompt += "根据结果，返回要完成的任务列表以满足目标。"
     if task_list:
-        prompt += "These new tasks must not overlap with incomplete tasks. "
+        prompt += "这些新任务不得与未完成的任务重叠。"
 
     prompt += """
-Return one task per line in your response. The result must be a numbered list in the format:
+在您的回复中每行返回一个任务。 结果必须是以下格式的编号列表：
 
-#. First task
-#. Second task
+#. 第一个任务
+#. 第二个任务
 
-The number of each entry must be followed by a period. If your list is empty, write "There are no tasks to add at this time."
-Unless your list is empty, do not include any headers before your numbered list or follow your numbered list with any other output."""
+每个条目的编号后面必须跟一个句点。 如果您的列表是空的，请写上“此时没有要添加的任务”。
+除非您的列表为空，否则不要在编号列表之前包含任何标题，也不要在编号列表之后添加任何其他输出。"""
 
-    print(f'\n*****TASK CREATION AGENT PROMPT****\n{prompt}\n')
+    print(f'\n***** 任务创建代理提示 ****\n{prompt}\n')
     response = openai_call(prompt, max_tokens=2000)
-    print(f'\n****TASK CREATION AGENT RESPONSE****\n{response}\n')
+    print(f'\n**** 任务创建代理响应 ****\n{response}\n')
     new_tasks = response.split('\n')
     new_tasks_list = []
     for task_string in new_tasks:
@@ -463,22 +463,22 @@ def prioritization_agent():
     bullet_string = '\n'
 
     prompt = f"""
-You are tasked with prioritizing the following tasks: {bullet_string + bullet_string.join(task_names)}
-Consider the ultimate objective of your team: {OBJECTIVE}.
-Tasks should be sorted from highest to lowest priority, where higher-priority tasks are those that act as pre-requisites or are more essential for meeting the objective.
-Do not remove any tasks. Return the ranked tasks as a numbered list in the format:
+您的任务是确定以下任务的优先级：{bullet_string + bullet_string.join(task_names)}
+考虑您团队的最终目标：{OBJECTIVE}.
+任务应从最高优先级到最低优先级排序，其中优先级较高的任务是作为先决条件或对实现目标更重要的任务。
+不要删除任何任务。 将排名任务返回为格式为编号的列表：
 
-#. First task
-#. Second task
+#. 第一个任务
+#. 第二个任务
 
-The entries must be consecutively numbered, starting with 1. The number of each entry must be followed by a period.
-Do not include any headers before your ranked list or follow your list with any other output."""
+条目必须从 1 开始连续编号。每个条目的编号后必须跟一个句点。
+不要在排名列表之前包含任何标题，也不要在列表之后添加任何其他输出。"""
 
-    print(f'\n****TASK PRIORITIZATION AGENT PROMPT****\n{prompt}\n')
+    print(f'\n**** 任务优先级代理提示 ****\n{prompt}\n')
     response = openai_call(prompt, max_tokens=2000)
-    print(f'\n****TASK PRIORITIZATION AGENT RESPONSE****\n{response}\n')
+    print(f'\n**** 任务优先级代理响应 ****\n{response}\n')
     if not response:
-        print('Received empty response from priotritization agent. Keeping task list unchanged.')
+        print('从优先级代理收到空响应。 保持任务列表不变。')
         return
     new_tasks = response.split("\n") if "\n" in response else [response]
     new_tasks_list = []
@@ -511,10 +511,10 @@ def execution_agent(objective: str, task: str) -> str:
     # print("\n****RELEVANT CONTEXT****\n")
     # print(context)
     # print('')
-    prompt = f'Perform one task based on the following objective: {objective}.\n'
+    prompt = f'根据以下目标执行一项任务：{objective}.\n'
     if context:
-        prompt += 'Take into account these previously completed tasks:' + '\n'.join(context)
-    prompt += f'\nYour task: {task}\nResponse:'
+        prompt += '考虑这些以前完成的任务：' + '\n'.join(context)
+    prompt += f'\n你的任务: {task}\n响应:'
     return openai_call(prompt, max_tokens=2000)
 
 
@@ -552,18 +552,18 @@ def main():
         # As long as there are tasks in the storage...
         if not tasks_storage.is_empty():
             # Print the task list
-            print("\033[95m\033[1m" + "\n*****TASK LIST*****\n" + "\033[0m\033[0m")
+            print("\033[95m\033[1m" + "\n***** 任务列表 *****\n" + "\033[0m\033[0m")
             for t in tasks_storage.get_task_names():
                 print(" • " + str(t))
 
             # Step 1: Pull the first incomplete task
             task = tasks_storage.popleft()
-            print("\033[92m\033[1m" + "\n*****NEXT TASK*****\n" + "\033[0m\033[0m")
+            print("\033[92m\033[1m" + "\n***** 下一个任务 *****\n" + "\033[0m\033[0m")
             print(str(task["task_name"]))
 
             # Send to execution function to complete the task based on the context
             result = execution_agent(OBJECTIVE, str(task["task_name"]))
-            print("\033[93m\033[1m" + "\n*****TASK RESULT*****\n" + "\033[0m\033[0m")
+            print("\033[93m\033[1m" + "\n***** 任务结果 *****\n" + "\033[0m\033[0m")
             print(result)
 
             # Step 2: Enrich result and store in the results storage
@@ -588,7 +588,7 @@ def main():
                 tasks_storage.get_task_names(),
             )
 
-            print('Adding new tasks to task_storage')
+            print('添加新任务')
             for new_task in new_tasks:
                 new_task.update({"task_id": tasks_storage.next_task_id()})
                 print(str(new_task))
@@ -602,7 +602,7 @@ def main():
             # Sleep a bit before checking the task list again
             time.sleep(5)
         else:
-            print('Done.')
+            print('完.')
             loop = False
 
 
